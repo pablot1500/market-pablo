@@ -115,7 +115,7 @@ export class UI {
       const trend = Math.abs(t) < 0.005 ? '<span class="flat">=</span>' : t > 0 ? `<span class="up">▲ ${(t * 100).toFixed(0)}%</span>` : `<span class="down">▼ ${(-t * 100).toFixed(0)}%</span>`;
       const stock = g.stockOf(p);
       return `<tr>
-        <td><span class="swatch" style="background:${p.color}"></span>${p.name}</td>
+        <td><span class="swatch" style="background:${p.color}"></span>${p.name} <span class="small">${p.brand}</span></td>
         <td class="num">${fmt(e.cost[p.id])}</td>
         <td class="num">${trend}</td>
         <td class="num">${p.boxQty}</td>

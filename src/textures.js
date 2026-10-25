@@ -349,9 +349,11 @@ export function boxLabel(product) {
     ctx.font = 'bold 34px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(product.short.toUpperCase(), w / 2 + 8, h / 2 - 12);
-    ctx.font = '22px sans-serif';
-    ctx.fillText(`x${product.boxQty} unidades`, w / 2 + 8, h / 2 + 24);
+    ctx.fillText(product.short.toUpperCase(), w / 2 + 8, h / 2 - 18);
+    ctx.font = 'italic 20px Georgia, serif';
+    ctx.fillText(product.brand || '', w / 2 + 8, h / 2 + 10);
+    ctx.font = '18px sans-serif';
+    ctx.fillText(`x${product.boxQty} unidades`, w / 2 + 8, h / 2 + 34);
   });
   boxLabelCache.set(product.id, tex);
   return tex;

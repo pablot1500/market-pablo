@@ -4,41 +4,42 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sandbox de personas</title>
-  <link rel="stylesheet" href="css/style.css?v=202610250147" />
+  <link rel="stylesheet" href="css/style.css?v=202610250244" />
   <script type="importmap">
 {
   "imports": {
-    "three": "./vendor/three.module.min.js?v=202610250147",
-    "three/addons/controls/OrbitControls.js": "./vendor/addons/controls/OrbitControls.js?v=202610250147",
-    "./vendor/addons/controls/OrbitControls.js": "./vendor/addons/controls/OrbitControls.js?v=202610250147",
-    "three/addons/loaders/GLTFLoader.js": "./vendor/addons/loaders/GLTFLoader.js?v=202610250147",
-    "./vendor/addons/loaders/GLTFLoader.js": "./vendor/addons/loaders/GLTFLoader.js?v=202610250147",
-    "three/addons/utils/BufferGeometryUtils.js": "./vendor/addons/utils/BufferGeometryUtils.js?v=202610250147",
-    "./vendor/addons/utils/BufferGeometryUtils.js": "./vendor/addons/utils/BufferGeometryUtils.js?v=202610250147",
-    "three/addons/utils/SkeletonUtils.js": "./vendor/addons/utils/SkeletonUtils.js?v=202610250147",
-    "./vendor/addons/utils/SkeletonUtils.js": "./vendor/addons/utils/SkeletonUtils.js?v=202610250147",
-    "./src/audio.js": "./src/audio.js?v=202610250147",
-    "./src/boxes.js": "./src/boxes.js?v=202610250147",
-    "./src/checkout.js": "./src/checkout.js?v=202610250147",
-    "./src/cleaning.js": "./src/cleaning.js?v=202610250147",
-    "./src/config.js": "./src/config.js?v=202610250147",
-    "./src/customers.js": "./src/customers.js?v=202610250147",
-    "./src/economy.js": "./src/economy.js?v=202610250147",
-    "./src/exterior.js": "./src/exterior.js?v=202610250147",
-    "./src/furniture.js": "./src/furniture.js?v=202610250147",
-    "./src/main.js": "./src/main.js?v=202610250147",
-    "./src/mover.js": "./src/mover.js?v=202610250147",
-    "./src/pathfinding.js": "./src/pathfinding.js?v=202610250147",
-    "./src/people.js": "./src/people.js?v=202610250147",
-    "./src/player.js": "./src/player.js?v=202610250147",
-    "./src/productMeshes.js": "./src/productMeshes.js?v=202610250147",
-    "./src/sandbox.js": "./src/sandbox.js?v=202610250147",
-    "./src/save.js": "./src/save.js?v=202610250147",
-    "./src/shelves.js": "./src/shelves.js?v=202610250147",
-    "./src/textures.js": "./src/textures.js?v=202610250147",
-    "./src/traffic.js": "./src/traffic.js?v=202610250147",
-    "./src/ui.js": "./src/ui.js?v=202610250147",
-    "./src/world.js": "./src/world.js?v=202610250147"
+    "three": "./vendor/three.module.min.js?v=202610250244",
+    "three/addons/controls/OrbitControls.js": "./vendor/addons/controls/OrbitControls.js?v=202610250244",
+    "./vendor/addons/controls/OrbitControls.js": "./vendor/addons/controls/OrbitControls.js?v=202610250244",
+    "three/addons/loaders/GLTFLoader.js": "./vendor/addons/loaders/GLTFLoader.js?v=202610250244",
+    "./vendor/addons/loaders/GLTFLoader.js": "./vendor/addons/loaders/GLTFLoader.js?v=202610250244",
+    "three/addons/utils/BufferGeometryUtils.js": "./vendor/addons/utils/BufferGeometryUtils.js?v=202610250244",
+    "./vendor/addons/utils/BufferGeometryUtils.js": "./vendor/addons/utils/BufferGeometryUtils.js?v=202610250244",
+    "three/addons/utils/SkeletonUtils.js": "./vendor/addons/utils/SkeletonUtils.js?v=202610250244",
+    "./vendor/addons/utils/SkeletonUtils.js": "./vendor/addons/utils/SkeletonUtils.js?v=202610250244",
+    "./src/audio.js": "./src/audio.js?v=202610250244",
+    "./src/boxes.js": "./src/boxes.js?v=202610250244",
+    "./src/checkout.js": "./src/checkout.js?v=202610250244",
+    "./src/cleaning.js": "./src/cleaning.js?v=202610250244",
+    "./src/config.js": "./src/config.js?v=202610250244",
+    "./src/customers.js": "./src/customers.js?v=202610250244",
+    "./src/economy.js": "./src/economy.js?v=202610250244",
+    "./src/exterior.js": "./src/exterior.js?v=202610250244",
+    "./src/furniture.js": "./src/furniture.js?v=202610250244",
+    "./src/main.js": "./src/main.js?v=202610250244",
+    "./src/mover.js": "./src/mover.js?v=202610250244",
+    "./src/pathfinding.js": "./src/pathfinding.js?v=202610250244",
+    "./src/people.js": "./src/people.js?v=202610250244",
+    "./src/player.js": "./src/player.js?v=202610250244",
+    "./src/productArt.js": "./src/productArt.js?v=202610250244",
+    "./src/productMeshes.js": "./src/productMeshes.js?v=202610250244",
+    "./src/sandbox.js": "./src/sandbox.js?v=202610250244",
+    "./src/save.js": "./src/save.js?v=202610250244",
+    "./src/shelves.js": "./src/shelves.js?v=202610250244",
+    "./src/textures.js": "./src/textures.js?v=202610250244",
+    "./src/traffic.js": "./src/traffic.js?v=202610250244",
+    "./src/ui.js": "./src/ui.js?v=202610250244",
+    "./src/world.js": "./src/world.js?v=202610250244"
   }
 }
   </script>
@@ -76,6 +77,6 @@
     </aside>
     <div id="sb-loading" class="hidden">Cargando…</div>
   </div>
-  <script type="module" src="src/sandbox.js?v=202610250147"></script>
+  <script type="module" src="src/sandbox.js?v=202610250244"></script>
 </body>
 </html>

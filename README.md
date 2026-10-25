@@ -67,7 +67,9 @@ src/world.js        tienda, calle, edificios, luces y ciclo día/noche
 src/exterior.js     edificios, árboles, faroles y mobiliario urbano
 src/furniture.js    muebles movibles: mostrador con caja, escritorio con PC, tacho
 src/mover.js        lógica para mover y rotar muebles
-src/shelves.js      góndolas y espacios de los estantes
+src/shelves.js      góndolas y espacios de los estantes (productos con InstancedMesh)
+src/productMeshes.js modelos 3D de los productos
+src/productArt.js   etiquetas de los productos (marcas inventadas)
 src/boxes.js        cajas de mercadería
 src/player.js       movimiento en primera persona y colisiones
 src/customers.js    clientes (compras, fila, paciencia)

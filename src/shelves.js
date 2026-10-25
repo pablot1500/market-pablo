@@ -1,7 +1,7 @@
 // Góndolas: cada unidad tiene 4 estantes con 2 espacios cada uno.
 import * as THREE from 'three';
 import { fmt } from './config.js';
-import { createProductMesh } from './productMeshes.js';
+import { getProductAsset } from './productMeshes.js';
 import { createPriceTag, woodGrain } from './textures.js';
 import { Furniture } from './furniture.js';
 
@@ -12,6 +12,7 @@ const BOARD_Y = [0.12, 0.56, 1.0, 1.44];
 const SLOT_W = 0.98;
 const SLOT_D = 0.44;
 const MAX_PER_SLOT = 24;
+const tmp = new THREE.Object3D();
 
 // Madera clara para la estructura y estantes; fondo gris oscuro también con veta.
 const frameMat = new THREE.MeshStandardMaterial({ color: '#e4e1db', map: woodGrain(240, 205, [0.5, 1]), roughness: 0.6 });
@@ -69,34 +70,54 @@ export class Slot {
     return this.product === product && !this.isFull();
   }
 
+  // Todos los productos de un espacio se dibujan juntos (InstancedMesh): muchísimo más liviano.
+  setProduct(product) {
+    this.disposeInstances();
+    this.product = product;
+    if (!product) return;
+    const { geometry, material } = getProductAsset(product);
+    this.inst = new THREE.InstancedMesh(geometry, material, MAX_PER_SLOT);
+    this.inst.count = 0;
+    this.inst.frustumCulled = false;
+    this.group.add(this.inst);
+  }
+
+  disposeInstances() {
+    if (!this.inst) return;
+    this.group.remove(this.inst);
+    this.inst.dispose();
+    this.inst = null;
+  }
+
   add(product) {
     if (!this.canAccept(product)) return false;
-    this.product = product;
-    const mesh = createProductMesh(product);
+    if (this.product !== product || !this.inst) this.setProduct(product);
     const { cols, rows } = slotLayout(product);
     const i = this.items.length;
     const col = i % cols;
     const row = Math.floor(i / cols) % rows;
     const pitchX = SLOT_W / cols;
     const pitchZ = SLOT_D / rows;
-    mesh.position.set(-SLOT_W / 2 + pitchX * (col + 0.5), 0, SLOT_D / 2 - pitchZ * (row + 0.5));
-    mesh.rotation.y = (Math.random() - 0.5) * 0.06;
-    this.group.add(mesh);
-    this.items.push(mesh);
+    tmp.position.set(-SLOT_W / 2 + pitchX * (col + 0.5), 0, SLOT_D / 2 - pitchZ * (row + 0.5));
+    tmp.rotation.set(0, (Math.random() - 0.5) * 0.08, 0);
+    tmp.updateMatrix();
+    this.inst.setMatrixAt(i, tmp.matrix);
+    this.inst.count = i + 1;
+    this.inst.instanceMatrix.needsUpdate = true;
+    this.items.push(i);
     return true;
   }
 
   remove() {
-    const mesh = this.items.pop();
-    if (!mesh) return null;
-    this.group.remove(mesh);
-    const product = this.product;
-    return product;
+    if (!this.items.length) return null;
+    this.items.pop();
+    this.inst.count = this.items.length;
+    return this.product;
   }
 
   // Deja el espacio libre para otro producto cuando queda vacío.
   clearIfEmpty() {
-    if (this.items.length === 0) this.product = null;
+    if (this.items.length === 0) this.setProduct(null);
   }
 
   refreshTag(prices) {
