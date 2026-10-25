@@ -4,9 +4,58 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Market Pablo</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=202610250130" />
+  <script>
+    // Si algo falla al cargar, mostrarlo en pantalla en vez de quedar "colgado".
+    (function () {
+      function show(msg) {
+        var el = document.getElementById('load-error');
+        if (!el) { window.__pendingError = msg; return; }
+        el.textContent = 'No se pudo iniciar el juego: ' + msg + '. Probá recargar la página con Ctrl+F5 (o Cmd+Shift+R en Mac).';
+        el.classList.remove('hidden');
+      }
+      window.__showLoadError = show;
+      window.addEventListener('error', function (e) {
+        if (window.__game) return;
+        var t = e.target;
+        if (t && t.tagName === 'SCRIPT') show('no se pudo descargar ' + (t.src || 'un archivo'));
+        else show(e.message || 'error desconocido');
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) { if (!window.__game) show(String(e.reason)); });
+      window.addEventListener('DOMContentLoaded', function () {
+        if (window.__pendingError) show(window.__pendingError);
+        var touchOnly = window.matchMedia && !window.matchMedia('(any-pointer: fine)').matches;
+        if (touchOnly) document.getElementById('touch-warning').classList.remove('hidden');
+        setTimeout(function () { if (!window.__game) show('el juego tardó demasiado en cargar'); }, 15000);
+      });
+    })();
+  </script>
   <script type="importmap">
-    { "imports": { "three": "./vendor/three.module.min.js" } }
+{
+  "imports": {
+    "three": "./vendor/three.module.min.js?v=202610250130",
+    "./src/audio.js": "./src/audio.js?v=202610250130",
+    "./src/boxes.js": "./src/boxes.js?v=202610250130",
+    "./src/checkout.js": "./src/checkout.js?v=202610250130",
+    "./src/cleaning.js": "./src/cleaning.js?v=202610250130",
+    "./src/config.js": "./src/config.js?v=202610250130",
+    "./src/customers.js": "./src/customers.js?v=202610250130",
+    "./src/economy.js": "./src/economy.js?v=202610250130",
+    "./src/exterior.js": "./src/exterior.js?v=202610250130",
+    "./src/furniture.js": "./src/furniture.js?v=202610250130",
+    "./src/main.js": "./src/main.js?v=202610250130",
+    "./src/mover.js": "./src/mover.js?v=202610250130",
+    "./src/pathfinding.js": "./src/pathfinding.js?v=202610250130",
+    "./src/player.js": "./src/player.js?v=202610250130",
+    "./src/productMeshes.js": "./src/productMeshes.js?v=202610250130",
+    "./src/save.js": "./src/save.js?v=202610250130",
+    "./src/shelves.js": "./src/shelves.js?v=202610250130",
+    "./src/textures.js": "./src/textures.js?v=202610250130",
+    "./src/traffic.js": "./src/traffic.js?v=202610250130",
+    "./src/ui.js": "./src/ui.js?v=202610250130",
+    "./src/world.js": "./src/world.js?v=202610250130"
+  }
+}
   </script>
 </head>
 <body>
@@ -35,6 +84,8 @@
       <div class="card start">
         <h1>MARKET PABLO</h1>
         <p class="subtitle">Tu almacén de barrio. Comprá, reponé, cobrá y hacé crecer el negocio.</p>
+        <div id="load-error" class="notice error hidden"></div>
+        <div id="touch-warning" class="notice hidden">Este juego se juega en computadora, con teclado y mouse. En celular o tablet no se puede manejar la cámara.</div>
         <div class="buttons">
           <button id="btn-new" class="primary">Nueva partida</button>
           <button id="btn-continue">Continuar partida</button>
@@ -91,6 +142,6 @@
       </div>
     </div>
   </div>
-  <script type="module" src="src/main.js"></script>
+  <script type="module" src="src/main.js?v=202610250130"></script>
 </body>
 </html>

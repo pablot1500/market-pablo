@@ -64,6 +64,8 @@ button { font: inherit; cursor: pointer; }
 .controls li { margin-bottom: 6px; }
 kbd { background: #eee8da; border: 1px solid #d5ccb8; border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; font-size: 12px; font-family: inherit; }
 .small { font-size: 13px; color: var(--muted); }
+.notice { margin-top: 14px; padding: 10px 14px; border-radius: 10px; background: #fff4d6; color: #6b4e00; font-size: 14px; font-weight: 600; }
+.notice.error { background: #fde4e1; color: var(--red); }
 .setting { display: flex; align-items: center; gap: 12px; margin: 4px 0 16px; font-size: 14px; font-weight: 600; flex-wrap: wrap; }
 .setting input[type=range] { flex: 1; min-width: 160px; max-width: 320px; accent-color: var(--green); }
 .sens-val { font-variant-numeric: tabular-nums; min-width: 48px; color: var(--muted); }

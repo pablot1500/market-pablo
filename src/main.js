@@ -471,8 +471,14 @@ class Game {
         setTimeout(() => this.ui.toast('Empezá usando la computadora del escritorio para comprar mercadería 🖥️', 'info', 6000), 600);
       }
     };
-    document.getElementById('btn-new').addEventListener('click', begin);
-    cont.addEventListener('click', () => { this.load(readSave()); begin(); });
+    const safe = (fn) => () => {
+      try { fn(); } catch (err) {
+        console.error(err);
+        if (window.__showLoadError) window.__showLoadError(err.message);
+      }
+    };
+    document.getElementById('btn-new').addEventListener('click', safe(begin));
+    cont.addEventListener('click', safe(() => { this.load(readSave()); begin(); }));
     document.getElementById('btn-resume').addEventListener('click', () => this.lockPointer());
     document.getElementById('btn-save').addEventListener('click', () => {
       const ok = writeSave(this.serialize());

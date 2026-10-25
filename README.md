@@ -75,3 +75,7 @@ src/save.js         guardado en localStorage
 ```
 
 Para cambiar la dificultad, los productos o la duración del día, empezá por `src/config.js`.
+
+### Publicar una actualización
+
+Antes de subir cambios en `src/`, corré `python3 tools/bump-version.py`. Eso agrega un número de versión a cada archivo en `index.html` para que el navegador descargue todos los archivos nuevos juntos y no mezcle versiones viejas guardadas en caché (si se mezclan, el juego no arranca).
