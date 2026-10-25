@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sandbox de personas</title>
+  <link rel="stylesheet" href="css/style.css?v=202610250147" />
+  <script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.min.js?v=202610250147",
+    "three/addons/controls/OrbitControls.js": "./vendor/addons/controls/OrbitControls.js?v=202610250147",
+    "./vendor/addons/controls/OrbitControls.js": "./vendor/addons/controls/OrbitControls.js?v=202610250147",
+    "three/addons/loaders/GLTFLoader.js": "./vendor/addons/loaders/GLTFLoader.js?v=202610250147",
+    "./vendor/addons/loaders/GLTFLoader.js": "./vendor/addons/loaders/GLTFLoader.js?v=202610250147",
+    "three/addons/utils/BufferGeometryUtils.js": "./vendor/addons/utils/BufferGeometryUtils.js?v=202610250147",
+    "./vendor/addons/utils/BufferGeometryUtils.js": "./vendor/addons/utils/BufferGeometryUtils.js?v=202610250147",
+    "three/addons/utils/SkeletonUtils.js": "./vendor/addons/utils/SkeletonUtils.js?v=202610250147",
+    "./vendor/addons/utils/SkeletonUtils.js": "./vendor/addons/utils/SkeletonUtils.js?v=202610250147",
+    "./src/audio.js": "./src/audio.js?v=202610250147",
+    "./src/boxes.js": "./src/boxes.js?v=202610250147",
+    "./src/checkout.js": "./src/checkout.js?v=202610250147",
+    "./src/cleaning.js": "./src/cleaning.js?v=202610250147",
+    "./src/config.js": "./src/config.js?v=202610250147",
+    "./src/customers.js": "./src/customers.js?v=202610250147",
+    "./src/economy.js": "./src/economy.js?v=202610250147",
+    "./src/exterior.js": "./src/exterior.js?v=202610250147",
+    "./src/furniture.js": "./src/furniture.js?v=202610250147",
+    "./src/main.js": "./src/main.js?v=202610250147",
+    "./src/mover.js": "./src/mover.js?v=202610250147",
+    "./src/pathfinding.js": "./src/pathfinding.js?v=202610250147",
+    "./src/people.js": "./src/people.js?v=202610250147",
+    "./src/player.js": "./src/player.js?v=202610250147",
+    "./src/productMeshes.js": "./src/productMeshes.js?v=202610250147",
+    "./src/sandbox.js": "./src/sandbox.js?v=202610250147",
+    "./src/save.js": "./src/save.js?v=202610250147",
+    "./src/shelves.js": "./src/shelves.js?v=202610250147",
+    "./src/textures.js": "./src/textures.js?v=202610250147",
+    "./src/traffic.js": "./src/traffic.js?v=202610250147",
+    "./src/ui.js": "./src/ui.js?v=202610250147",
+    "./src/world.js": "./src/world.js?v=202610250147"
+  }
+}
+  </script>
+</head>
+<body>
+  <div id="app">
+    <aside id="sandbox-panel">
+      <div class="sb-head">
+        <h2>Sandbox de personas</h2>
+        <a href="./" class="sb-back">← Volver al juego</a>
+      </div>
+      <p class="small">Hacé click en una persona para invocarla. Arrastrá con el mouse para girar la cámara, rueda para acercar.</p>
+
+      <h3>Invocar</h3>
+      <div id="sb-people" class="sb-grid"></div>
+      <div class="sb-row">
+        <button class="btn primary" id="sb-random">Invocar 5 al azar</button>
+        <button class="btn" id="sb-clear">Borrar todos</button>
+      </div>
+
+      <h3>Qué hacen</h3>
+      <div class="sb-row" id="sb-modes">
+        <button class="btn sb-mode active" data-mode="wander">Pasear</button>
+        <button class="btn sb-mode" data-mode="walk">Caminar en el lugar</button>
+        <button class="btn sb-mode" data-mode="walkFast">Caminar rápido</button>
+        <button class="btn sb-mode" data-mode="idle">Parados</button>
+        <button class="btn sb-mode" data-mode="look">Mirar alrededor</button>
+      </div>
+
+      <h3>Velocidad al pasear</h3>
+      <div class="setting"><input type="range" id="sb-speed" min="0.6" max="2.2" step="0.05" value="1.25" /><span id="sb-speed-val" class="sens-val">1.25 m/s</span></div>
+
+      <p class="small" id="sb-status">Personas: 0</p>
+      <p class="small credits">Modelos y animaciones: <a href="https://github.com/microsoft/Microsoft-Rocketbox" target="_blank" rel="noopener">Microsoft Rocketbox</a> (licencia MIT).</p>
+    </aside>
+    <div id="sb-loading" class="hidden">Cargando…</div>
+  </div>
+  <script type="module" src="src/sandbox.js?v=202610250147"></script>
+</body>
+</html>

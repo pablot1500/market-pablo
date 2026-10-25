@@ -116,3 +116,19 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .bill { padding: 14px 0; border-radius: 8px; border: 1px solid rgba(0,0,0,0.12); font-weight: 800; font-size: 15px; background: #cfe8d4; color: #1b4d2a; }
 .coin { padding: 12px 0; border-radius: 999px; border: 1px solid rgba(0,0,0,0.12); font-weight: 800; font-size: 14px; background: #f1dfa8; color: #6b4e00; }
 .err { color: var(--red); font-weight: 600; min-height: 22px; margin-top: 8px; }
+
+/* ---------- Sandbox de personas ---------- */
+#sandbox-panel { position: absolute; top: 12px; left: 12px; bottom: 12px; width: min(340px, calc(100% - 24px)); overflow: auto; background: rgba(253, 250, 243, 0.95); border-radius: 14px; padding: 16px 18px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); }
+#sandbox-panel h2 { margin: 0; font-size: 20px; color: var(--green); }
+#sandbox-panel h3 { margin: 14px 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+.sb-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.sb-back { font-size: 13px; color: var(--green); font-weight: 600; text-decoration: none; }
+.sb-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.sb-person { display: flex; flex-direction: column; align-items: flex-start; padding: 8px 10px !important; }
+.sb-person span { font-size: 12px; color: var(--muted); font-weight: 500; }
+.sb-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.sb-mode { padding: 7px 10px !important; font-size: 13px; }
+.sb-mode.active { background: var(--green); color: #fff; border-color: var(--green); }
+.credits a { color: var(--green); }
+#sb-loading { position: absolute; right: 16px; top: 16px; background: var(--chip); color: #fff; padding: 8px 14px; border-radius: 10px; font-weight: 600; }
+.link-sandbox { display: inline-block; margin-left: 4px; font-size: 14px; color: var(--green); font-weight: 600; }

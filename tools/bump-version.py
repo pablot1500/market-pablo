@@ -14,19 +14,24 @@ import re
 import time
 
 root = pathlib.Path(__file__).resolve().parent.parent
-index = root / 'index.html'
 version = time.strftime('%Y%m%d%H%M')
 
 imports = {'three': f'./vendor/three.module.min.js?v={version}'}
+for f in sorted((root / 'vendor' / 'addons').rglob('*.js')):
+    rel = f.relative_to(root / 'vendor' / 'addons').as_posix()
+    imports[f'three/addons/{rel}'] = f'./vendor/addons/{rel}?v={version}'
+    imports[f'./vendor/addons/{rel}'] = f'./vendor/addons/{rel}?v={version}'
 for f in sorted((root / 'src').glob('*.js')):
     rel = f'./src/{f.name}'
     imports[rel] = f'{rel}?v={version}'
-
 importmap = json.dumps({'imports': imports}, indent=2, ensure_ascii=False)
-html = index.read_text(encoding='utf-8')
-html = re.sub(r'<script type="importmap">.*?</script>',
-              '<script type="importmap">\n' + importmap + '\n  </script>', html, flags=re.S)
-html = re.sub(r'src="src/main\.js(\?v=\w+)?"', f'src="src/main.js?v={version}"', html)
-html = re.sub(r'href="css/style\.css(\?v=\w+)?"', f'href="css/style.css?v={version}"', html)
-index.write_text(html, encoding='utf-8')
+
+for page in ['index.html', 'sandbox.html']:
+    path = root / page
+    html = path.read_text(encoding='utf-8')
+    html = re.sub(r'<script type="importmap">.*?</script>',
+                  '<script type="importmap">\n' + importmap + '\n  </script>', html, flags=re.S)
+    html = re.sub(r'src="src/(\w+)\.js(\?v=\w+)?"', lambda m: f'src="src/{m.group(1)}.js?v={version}"', html)
+    html = re.sub(r'href="css/style\.css(\?v=\w+)?"', f'href="css/style.css?v={version}"', html)
+    path.write_text(html, encoding='utf-8')
 print('versión', version)

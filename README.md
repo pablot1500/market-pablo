@@ -50,6 +50,12 @@ La **sensibilidad del mouse** se ajusta desde el menú de inicio o desde la paus
 - Si cobrás por encima del mercado ganás más por unidad, pero los clientes compran menos y baja la reputación.
 - La **reputación** y la **limpieza** influyen en cuántos clientes llegan. Si no encuentran un producto o esperan demasiado en la fila, se van enojados.
 
+## Sandbox de personas
+
+En `sandbox.html` (botón **Sandbox de personas** en el menú) se pueden invocar las personas realistas, verlas pasear y probar sus animaciones (caminar, caminar rápido, parado, mirar alrededor). Es una vista previa: todavía no reemplazan a los clientes del juego.
+
+Los modelos y animaciones vienen de [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox) (licencia MIT, ver `assets/people/LICENSE-Rocketbox.md`), convertidos de FBX a glTF con texturas reducidas.
+
 ## Estructura del código
 
 ```
@@ -72,6 +78,10 @@ src/traffic.js      autos de la calle
 src/pathfinding.js  navegación A* para los clientes
 src/ui.js           paneles: computadora, precios, cobro, resumen
 src/save.js         guardado en localStorage
+src/people.js       carga de personas realistas (glTF) y sus animaciones
+src/sandbox.js      página de prueba de personas (sandbox.html)
+assets/people/      modelos y animaciones de Rocketbox
+tools/              script para versionar archivos al publicar
 ```
 
 Para cambiar la dificultad, los productos o la duración del día, empezá por `src/config.js`.
