@@ -1,7 +1,7 @@
 // Sandbox para ver las personas realistas: invocarlas, verlas pasear y probar animaciones.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { PEOPLE, WALK_SPEED, createPerson } from './people.js';
+import { PEOPLE, createPerson } from './people.js';
 import { floorTiles, woodGrain } from './textures.js';
 
 const AREA = 7; // radio por donde pasean
@@ -54,7 +54,7 @@ scene.add(floor);
 // ---------- personas ----------
 const people = [];
 let mode = 'wander';
-let wanderSpeed = 1.25;
+let wanderSpeed = 1.2;
 const status = document.getElementById('sb-status');
 const loading = document.getElementById('sb-loading');
 let pending = 0;
@@ -113,7 +113,7 @@ function updatePerson(p, dt) {
       const step = wanderSpeed * dt * facing;
       pos.x += Math.sin(p.root.rotation.y) * step;
       pos.z += Math.cos(p.root.rotation.y) * step;
-      p.setSpeed(wanderSpeed / WALK_SPEED.walk);
+      p.matchSpeed(wanderSpeed * Math.max(0.35, facing));
       if (dist < 0.3) {
         p.target = null;
         p.wait = 1.5 + Math.random() * 4;

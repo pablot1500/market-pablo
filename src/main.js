@@ -16,6 +16,7 @@ import { Traffic } from './traffic.js';
 import { UI } from './ui.js';
 import { sfx } from './audio.js';
 import { hasSave, readSave, writeSave, readSettings, writeSettings } from './save.js';
+import { preloadPeople } from './people.js';
 
 class Game {
   constructor() {
@@ -92,6 +93,8 @@ class Game {
     this.bindInput();
     this.bindMenus();
     this.renderer.setAnimationLoop(() => this.frame());
+    // las personas se descargan en segundo plano mientras estás en el menú
+    preloadPeople();
   }
 
   // ---------- utilidades ----------
@@ -589,6 +592,21 @@ class Game {
     if (this.closedForDay) this.summaryShown = false;
   }
 
+  // Los clientes no se atraviesan: si te chocan, te corren un poquito.
+  pushPlayerFromCustomers() {
+    const p = this.player.position;
+    const min = 0.55;
+    for (const c of this.customers.list) {
+      const dx = p.x - c.pos.x, dz = p.z - c.pos.z;
+      const d = Math.hypot(dx, dz);
+      if (d < min && d > 1e-4) {
+        p.x = c.pos.x + (dx / d) * min;
+        p.z = c.pos.z + (dz / d) * min;
+      }
+    }
+    this.player.resolveCollisions(this.colliders);
+  }
+
   // ---------- loop ----------
   frame() {
     const dt = Math.min(0.05, this.clock.getDelta());
@@ -599,6 +617,7 @@ class Game {
 
   step(dt) {
     this.player.update(dt, this.colliders);
+    this.pushPlayerFromCustomers();
     this.updateTime(dt);
     this.customers.update(dt);
     this.traffic.update(dt, this.player.position);

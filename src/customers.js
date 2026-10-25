@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { CUSTOMER, GAME_MINUTES_PER_SECOND, PRODUCTS, STORE } from './config.js';
 import { bubbleTexture } from './textures.js';
+import { PEOPLE, createPerson } from './people.js';
 
 const SKIN = ['#f3cfa9', '#e8b88a', '#d39a6a', '#b07548', '#8a5636', '#5e3a24', '#f6d7bd'];
 const SHIRTS = ['#e53935', '#1e88e5', '#43a047', '#fdd835', '#8e24aa', '#fb8c00', '#00897b', '#546e7a', '#d81b60', '#3949ab', '#f5f5f5', '#795548', '#9ccc65'];
@@ -141,7 +142,18 @@ function buildModel() {
   if (style === 'long') mesh(GEO.hairBack, hair, headG, 0, 0.09, -0.055).scale.set(1.1, 1, 0.55);
   if (style === 'bun') mesh(GEO.bun, hair, headG, 0, 0.27, -0.07);
 
-  // canasta (cuelga de la mano derecha)
+  const basket = buildBasket();
+  basket.position.set(0, -0.33, 0);
+  basket.rotation.y = Math.PI / 2;
+  arms[1].elbow.add(basket);
+
+  const height = (female ? 0.94 : 1.0) * (0.95 + Math.random() * 0.1);
+  g.scale.setScalar(height);
+  return { group: g, body, torso, legs, arms, head: headG, basket };
+}
+
+// Canasta roja de supermercado (cuelga de la mano derecha)
+function buildBasket() {
   const basket = new THREE.Group();
   const bm = m('#d32f2f', 0.5);
   const bw = 0.34, bh = 0.18, bd = 0.24;
@@ -154,26 +166,51 @@ function buildModel() {
   const handle = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.01, 6, 12, Math.PI), m('#424242', 0.4));
   handle.position.y = 0.0;
   basket.add(handle);
-  basket.position.set(0, -0.33, 0);
-  basket.rotation.y = Math.PI / 2;
   basket.visible = false;
-  arms[1].elbow.add(basket);
-
-  const height = (female ? 0.94 : 1.0) * (0.95 + Math.random() * 0.1);
-  g.scale.setScalar(height);
-  return { group: g, body, torso, legs, arms, head: headG, basket };
+  return basket;
 }
+
+// Sombra suave bajo los pies (los modelos realistas no proyectan sombras en el juego)
+const shadowGeo = new THREE.CircleGeometry(0.34, 24).rotateX(-Math.PI / 2);
+const shadowMat = (() => {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(0,0,0,0.45)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  return new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false });
+})();
+const tmpV = new THREE.Vector3();
 
 let nextId = 1;
 
 export class Customer {
-  constructor(game, spawn) {
+  // person: modelo realista (people.js). Si no hay, se usa el muñeco hecho a mano.
+  constructor(game, spawn, person = null) {
     this.id = nextId++;
     this.game = game;
-    const model = buildModel();
-    this.mesh = model.group;
-    this.model = model;
-    this.basketMesh = model.basket;
+    if (person) {
+      this.person = person;
+      this.mesh = person.root;
+      this.basketMesh = buildBasket();
+      this.basketMesh.rotation.y = Math.PI / 2;
+      this.mesh.add(this.basketMesh);
+      this.hand = person.bone('R_Hand');
+      const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+      shadow.position.y = 0.02;
+      this.mesh.add(shadow);
+      // en la fila algunos esperan y otros miran el celular
+      this.queueAnim = Math.random() < 0.35 ? 'phone' : 'wait';
+      person.play('walkFast', 0);
+    } else {
+      const model = buildModel();
+      this.mesh = model.group;
+      this.model = model;
+      this.basketMesh = model.basket;
+    }
     this.pos = spawn.clone();
     this.mesh.position.copy(this.pos);
     this.heading = spawn.x < 0 ? Math.PI / 2 : -Math.PI / 2;
@@ -236,7 +273,8 @@ export class Customer {
       case 'toShelf':
         if (!moving) {
           this.state = 'picking';
-          this.wait = 1.0 + Math.random() * 0.8;
+          this.wait = this.person ? 2.0 + Math.random() * 0.6 : 1.0 + Math.random() * 0.8;
+          if (this.person && this.person.currentKey === 'take') this.person.actions.take.reset().play();
           const c = this.target.slot.worldCenter();
           this.heading = Math.atan2(c.x - this.pos.x, c.z - this.pos.z);
         }
@@ -285,6 +323,7 @@ export class Customer {
     let diff = this.heading - this.mesh.rotation.y;
     diff = Math.atan2(Math.sin(diff), Math.cos(diff));
     this.mesh.rotation.y += diff * Math.min(1, dt * 8);
+    if (this.person) { this.animatePerson(dt, moving); return; }
     const md = this.model;
     const k = Math.min(1, dt * 12);
     const lerp = (o, prop, v) => { o.rotation[prop] += (v - o.rotation[prop]) * k; };
@@ -315,6 +354,25 @@ export class Customer {
     lerp(md.torso, 'x', moving ? 0.05 : 0);
     // mira hacia la góndola cuando elige
     lerp(md.head, 'x', this.state === 'picking' ? 0.15 : 0);
+  }
+
+  animatePerson(dt, moving) {
+    const p = this.person;
+    let key = 'idle';
+    if (moving) key = 'walkFast';
+    else if (this.state === 'picking') key = 'take';
+    else if (this.state === 'queue' || this.state === 'checkout') key = this.queueAnim;
+    p.play(key, 0.3);
+    if (moving) p.matchSpeed(CUSTOMER.speed);
+    else if (key === 'take') p.setSpeed(1.25);
+    p.update(dt);
+    // la canasta cuelga derecha desde la mano
+    if (this.basketMesh.visible && this.hand) {
+      this.mesh.updateMatrixWorld(true);
+      this.hand.getWorldPosition(tmpV);
+      this.mesh.worldToLocal(tmpV);
+      this.basketMesh.position.set(tmpV.x, tmpV.y - 0.02, tmpV.z);
+    }
   }
 
   nextShelf() {
@@ -429,6 +487,7 @@ export class Customer {
   }
 
   dispose() {
+    if (this.person) this.person.dispose();
     this.game.scene.remove(this.mesh);
     // las geometrías del cuerpo son compartidas; solo se liberan las de la canasta
     this.basketMesh.traverse((o) => { if (o.isMesh) o.geometry.dispose(); });
@@ -455,6 +514,9 @@ export class CustomerManager {
   constructor(game) {
     this.game = game;
     this.list = [];
+    this.pending = 0;       // clientes cuyo modelo se está cargando
+    this.generation = 0;    // para descartar cargas viejas al limpiar
+    this.useModels = true;  // si fallan los modelos realistas, se usan los muñecos
   }
 
   get count() { return this.list.length; }
@@ -471,7 +533,7 @@ export class CustomerManager {
   // Se llama una vez por cada minuto de juego mientras la tienda está abierta.
   minuteTick(minute) {
     const g = this.game;
-    if (this.list.length >= CUSTOMER.maxInWorld) return;
+    if (this.list.length + this.pending >= CUSTOMER.maxInWorld) return;
     const rep = g.economy.reputation;
     const clean = g.cleaning.cleanliness();
     const p = CUSTOMER.baseSpawnPerMinute * this.hourFactor(minute / 60) * (0.45 + rep * 1.1) * (0.6 + 0.4 * clean);
@@ -481,9 +543,26 @@ export class CustomerManager {
   spawn() {
     const g = this.game;
     const sp = g.world.spawnPoints[Math.floor(Math.random() * g.world.spawnPoints.length)];
-    const c = new Customer(g, sp.clone().add(new THREE.Vector3(0, 0, (Math.random() - 0.5) * 0.8)));
-    this.list.push(c);
-    return c;
+    const pos = sp.clone().add(new THREE.Vector3(0, 0, (Math.random() - 0.5) * 0.8));
+    if (!this.useModels) {
+      const c = new Customer(g, pos, null);
+      this.list.push(c);
+      return c;
+    }
+    const def = pickPerson();
+    const gen = this.generation;
+    this.pending++;
+    createPerson(def.id).then((person) => {
+      this.pending--;
+      if (gen !== this.generation) { person.dispose(); return; }
+      this.list.push(new Customer(g, pos, person));
+    }).catch((err) => {
+      console.warn('No se pudieron cargar los modelos de personas, uso los muñecos', err);
+      this.pending--;
+      this.useModels = false;
+      if (gen === this.generation) this.list.push(new Customer(g, pos, null));
+    });
+    return null;
   }
 
   update(dt) {
@@ -508,7 +587,16 @@ export class CustomerManager {
   }
 
   clear() {
+    this.generation++;
     for (const c of this.list) c.dispose();
     this.list = [];
   }
+}
+
+// Los chicos aparecen menos seguido que los adultos
+function pickPerson() {
+  const weights = PEOPLE.map((p) => (p.kind === 'Nene' || p.kind === 'Nena' ? 0.35 : 1));
+  let r = Math.random() * weights.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < PEOPLE.length; i++) { r -= weights[i]; if (r <= 0) return PEOPLE[i]; }
+  return PEOPLE[0];
 }

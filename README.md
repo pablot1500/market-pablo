@@ -52,7 +52,9 @@ La **sensibilidad del mouse** se ajusta desde el menú de inicio o desde la paus
 
 ## Sandbox de personas
 
-En `sandbox.html` (botón **Sandbox de personas** en el menú) se pueden invocar las personas realistas, verlas pasear y probar sus animaciones (caminar, caminar rápido, parado, mirar alrededor). Es una vista previa: todavía no reemplazan a los clientes del juego.
+Los clientes del juego son personas realistas (14 modelos distintos, incluidos chicos) con animaciones de caminar, agarrar productos, esperar en la fila y mirar el celular. Si los modelos no se pueden cargar, el juego usa los muñecos hechos a mano.
+
+En `sandbox.html` (botón **Sandbox de personas** en el menú) se pueden invocar esas personas, verlas pasear y probar cada animación.
 
 Los modelos y animaciones vienen de [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox) (licencia MIT, ver `assets/people/LICENSE-Rocketbox.md`), convertidos de FBX a glTF con texturas reducidas.
 
