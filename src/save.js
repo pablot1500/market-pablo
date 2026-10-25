@@ -26,3 +26,13 @@ export function readSave() {
 export function deleteSave() {
   try { localStorage.removeItem(KEY); } catch { /* sin almacenamiento */ }
 }
+
+const SETTINGS_KEY = 'market-pablo-settings';
+
+export function readSettings() {
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch { return {}; }
+}
+
+export function writeSettings(settings) {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* sin almacenamiento */ }
+}

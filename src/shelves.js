@@ -2,7 +2,8 @@
 import * as THREE from 'three';
 import { fmt } from './config.js';
 import { createProductMesh } from './productMeshes.js';
-import { createPriceTag } from './textures.js';
+import { createPriceTag, woodGrain } from './textures.js';
+import { Furniture } from './furniture.js';
 
 const UNIT_W = 2.0;
 const UNIT_D = 0.5;
@@ -12,9 +13,11 @@ const SLOT_W = 0.98;
 const SLOT_D = 0.44;
 const MAX_PER_SLOT = 24;
 
-const frameMat = new THREE.MeshStandardMaterial({ color: '#d7dde2', roughness: 0.45, metalness: 0.3 });
-const boardMat = new THREE.MeshStandardMaterial({ color: '#eef1f3', roughness: 0.5, metalness: 0.2 });
-const backMat = new THREE.MeshStandardMaterial({ color: '#2f7d5b', roughness: 0.8 });
+// Madera clara para la estructura y estantes; fondo gris oscuro también con veta.
+const frameMat = new THREE.MeshStandardMaterial({ color: '#e4e1db', map: woodGrain(240, 205, [0.5, 1]), roughness: 0.6 });
+const boardMat = new THREE.MeshStandardMaterial({ color: '#f1eee8', map: woodGrain(240, 205, [1, 0.25]), roughness: 0.55 });
+const backMat = new THREE.MeshStandardMaterial({ color: '#5a5d61', map: woodGrain(235, 185, [2, 1]), roughness: 0.75 });
+const edgeMat = new THREE.MeshStandardMaterial({ color: '#cfcac1', roughness: 0.5 });
 const hitMat = new THREE.MeshBasicMaterial({ visible: false });
 
 export function slotLayout(product) {
@@ -112,36 +115,25 @@ export class Slot {
   }
 }
 
-export class ShelfUnit {
-  constructor(scene, x, z, rotY, id) {
+export class ShelfUnit extends Furniture {
+  constructor(scene, id) {
+    super(scene, { type: 'shelf', name: 'estante', w: UNIT_W + 0.08, d: UNIT_D });
     this.id = id;
-    this.group = new THREE.Group();
-    this.group.position.set(x, 0, z);
-    this.group.rotation.y = rotY;
-    scene.add(this.group);
 
-    const add = (w, h, d, px, py, pz, m) => {
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
-      mesh.position.set(px, py, pz);
-      this.group.add(mesh);
-    };
+    const add = (w, h, d, px, py, pz, m) => this.add(new THREE.BoxGeometry(w, h, d), m, px, py, pz);
     add(0.04, UNIT_H, UNIT_D, -UNIT_W / 2 - 0.02, UNIT_H / 2, 0, frameMat);
     add(0.04, UNIT_H, UNIT_D, UNIT_W / 2 + 0.02, UNIT_H / 2, 0, frameMat);
     add(UNIT_W, UNIT_H, 0.03, 0, UNIT_H / 2, -UNIT_D / 2 + 0.015, backMat);
-    for (const y of BOARD_Y) add(UNIT_W, 0.03, UNIT_D, 0, y, 0, boardMat);
-    add(UNIT_W, 0.04, UNIT_D, 0, UNIT_H, 0, boardMat);
+    for (const y of BOARD_Y) {
+      add(UNIT_W, 0.03, UNIT_D, 0, y, 0, boardMat);
+      add(UNIT_W, 0.035, 0.012, 0, y, UNIT_D / 2 + 0.002, edgeMat);
+    }
+    add(UNIT_W + 0.08, 0.05, UNIT_D + 0.02, 0, UNIT_H, 0, frameMat);
     add(UNIT_W, 0.1, 0.03, 0, 0.05, UNIT_D / 2 - 0.015, frameMat);
 
     this.slots = [];
     for (let level = 0; level < BOARD_Y.length; level++) {
       for (let c = 0; c < 2; c++) this.slots.push(new Slot(this, level, c, this.slots.length));
     }
-
-    // Colisión (en el plano XZ, considerando la rotación en múltiplos de 90°)
-    const rotated = Math.abs(Math.sin(rotY)) > 0.5;
-    const hw = (rotated ? UNIT_D : UNIT_W) / 2 + 0.04;
-    const hd = (rotated ? UNIT_W : UNIT_D) / 2;
-    this.collider = { minX: x - hw, maxX: x + hw, minZ: z - hd, maxZ: z + hd, tag: 'shelf' };
-    this.group.updateMatrixWorld(true);
   }
 }

@@ -25,16 +25,24 @@ También se puede publicar gratis con **GitHub Pages** (Settings → Pages → D
 | Click | poner un producto en el estante, escanear en la caja, cobrar, limpiar (mantener), tirar caja vacía |
 | Click derecho | devolver un producto del estante a la caja |
 | `Q` | soltar la caja |
+| `F` | agarrar / soltar un mueble (estante, mostrador, escritorio, tacho) |
+| `R` o rueda | rotar el mueble que estás moviendo |
 | `Esc` | pausa (desde ahí se guarda la partida) |
 
 ### El día de trabajo
 
 1. Arrancás a las **08:00** con la tienda cerrada: aprovechá para comprar y reponer.
-2. Usá la **computadora** del mostrador: pestaña *Pedidos* para comprar cajas, *Precios* para fijar tu precio de venta y *Negocio* para ver estadísticas.
+2. Usá la **computadora** del escritorio: pestaña *Pedidos* para comprar cajas, *Precios* para fijar tu precio de venta y *Negocio* para ver estadísticas.
 3. Las cajas llegan a la **vereda**, a la derecha de la puerta.
 4. Cambiá el cartel de la puerta a **ABIERTO**: el reloj empieza a correr (1 segundo real = 1 minuto de juego) y llegan clientes. Si lo volvés a cerrar, el tiempo se detiene.
 5. Los clientes dejan sus productos en el mostrador: hacé click en cada uno para **escanearlo** y después click en la **caja registradora** para cobrar (efectivo con vuelto o tarjeta).
 6. A las **21:00** la tienda cierra sola. Cuando se va el último cliente ves el resumen del día y la partida se guarda.
+
+### Muebles
+
+Todos los muebles se pueden mover: mirá uno y apretá `F`. El mueble te sigue; el piso se marca en verde si entra y en rojo si no. `R` (o la rueda del mouse) lo rota, click o `F` lo suelta y `Q` cancela. El juego no te deja bloquear la puerta ni dejar a los clientes sin poder llegar a la caja o a un estante, y la fila de la caja se reacomoda sola según dónde pongas el mostrador.
+
+La **sensibilidad del mouse** se ajusta desde el menú de inicio o desde la pausa (`Esc`).
 
 ### Economía
 
@@ -50,6 +58,9 @@ css/style.css       estilos de la interfaz
 src/config.js       constantes ajustables: productos, precios, velocidades, horarios
 src/main.js         clase Game: arma todo y corre el loop
 src/world.js        tienda, calle, edificios, luces y ciclo día/noche
+src/exterior.js     edificios, árboles, faroles y mobiliario urbano
+src/furniture.js    muebles movibles: mostrador con caja, escritorio con PC, tacho
+src/mover.js        lógica para mover y rotar muebles
 src/shelves.js      góndolas y espacios de los estantes
 src/boxes.js        cajas de mercadería
 src/player.js       movimiento en primera persona y colisiones

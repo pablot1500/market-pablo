@@ -16,7 +16,7 @@ export const PLAYER = {
 };
 
 export const CUSTOMER = {
-  speed: 1.35,
+  speed: 1.75,
   maxInWorld: 10,
   patienceSeconds: 150,
   baseSpawnPerMinute: 0.05,

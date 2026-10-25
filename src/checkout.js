@@ -24,19 +24,10 @@ export class Checkout {
     this.current = customer;
     this.phase = 'scanning';
     this.total = 0;
-    const area = g.world.counterItemArea;
     const n = customer.basket.length;
-    const perRow = Math.max(1, Math.ceil(n / 2));
     customer.basket.forEach((product, i) => {
       const mesh = createProductMesh(product);
-      const row = Math.floor(i / perRow);
-      const col = i % perRow;
-      const t = perRow === 1 ? 0.5 : col / (perRow - 1);
-      mesh.position.set(
-        THREE.MathUtils.lerp(area.maxX, area.minX, t) + (Math.random() - 0.5) * 0.03,
-        area.y,
-        row === 0 ? area.z1 : area.z0,
-      );
+      mesh.position.copy(g.counter.itemPosition(i, n));
       mesh.rotation.y = Math.random() * Math.PI;
       // una caja de colisión un poco más grande para que sea fácil apuntarle
       const [w, h, d] = product.size;
@@ -141,7 +132,7 @@ export class Checkout {
   }
 
   updateScreen() {
-    const screen = this.game.world.regScreen;
+    const screen = this.game.counter.regScreen;
     const old = screen.material.map;
     const lines = this.phase === 'idle' ? ['CAJA', 'Libre'] : this.phase === 'scanning' ? ['Subtotal', fmt(this.total)] : ['TOTAL', fmt(this.total)];
     const tex = screenTexture(lines, '#1b5e20');

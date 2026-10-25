@@ -28,7 +28,7 @@
       <div id="held"></div>
       <div id="checkout-hud"></div>
       <div id="toasts"></div>
-      <div id="keys-help">E interactuar · Click colocar/escanear · Click der. devolver · Q soltar caja · Shift correr · Esc pausa</div>
+      <div id="keys-help">E interactuar · Click colocar/escanear · Click der. devolver · Q soltar caja · F mover mueble · Shift correr · Esc pausa</div>
     </div>
 
     <div id="overlay-start" class="overlay">
@@ -39,16 +39,18 @@
           <button id="btn-new" class="primary">Nueva partida</button>
           <button id="btn-continue">Continuar partida</button>
         </div>
+        <div class="setting"><label>Sensibilidad del mouse</label><input type="range" class="sens-slider" min="0.2" max="3" step="0.05" value="1" /><span class="sens-val">1.00x</span></div>
         <div class="howto">
           <div>
             <h3>Cómo se juega</h3>
             <ol>
-              <li>Usá la <b>computadora</b> del mostrador para comprar cajas de productos.</li>
+              <li>Usá la <b>computadora</b> del escritorio para comprar cajas de productos.</li>
               <li>Las cajas llegan a la <b>vereda</b>, a la derecha de la puerta. Levantalas con <b>E</b>.</li>
               <li>Mirá un estante y hacé <b>click</b> para ir colocando los productos.</li>
               <li>Cambiá el cartel de la puerta a <b>ABIERTO</b>: arranca el día (08:00 a 21:00).</li>
               <li>Cuando un cliente deja sus cosas en el mostrador, hacé click para <b>escanearlas</b> y después click en la <b>caja registradora</b> para cobrar.</li>
               <li>Mantené el local <b>limpio</b> y poné <b>precios</b> razonables según el mercado.</li>
+              <li>Mirá un mueble (estante, mostrador, escritorio o tacho) y apretá <b>F</b> para moverlo.</li>
             </ol>
           </div>
           <div>
@@ -60,6 +62,7 @@
               <li><kbd>Click</kbd> colocar producto · escanear · limpiar</li>
               <li><kbd>Click der.</kbd> devolver producto a la caja</li>
               <li><kbd>Q</kbd> soltar caja</li>
+              <li><kbd>F</kbd> mover un mueble · <kbd>R</kbd> rotarlo</li>
               <li><kbd>Esc</kbd> pausa</li>
             </ul>
           </div>
@@ -76,6 +79,7 @@
           <button id="btn-save">Guardar partida</button>
           <button id="btn-menu">Menú principal</button>
         </div>
+        <div class="setting"><label>Sensibilidad del mouse</label><input type="range" class="sens-slider" min="0.2" max="3" step="0.05" value="1" /><span class="sens-val">1.00x</span></div>
         <p class="small" id="save-info"></p>
       </div>
     </div>

@@ -13,6 +13,7 @@ export class Player {
     this.locked = false;
     this.bob = 0;
     this.held = null; // Box que tiene en las manos
+    this.sensitivity = 1; // multiplicador elegido en el menú
 
     this.holdAnchor = new THREE.Group();
     this.holdAnchor.position.set(0.18, -0.5, -0.95);
@@ -20,8 +21,9 @@ export class Player {
 
     document.addEventListener('mousemove', (e) => {
       if (!this.locked) return;
-      this.yaw -= e.movementX * PLAYER.mouseSensitivity;
-      this.pitch -= e.movementY * PLAYER.mouseSensitivity;
+      const k = PLAYER.mouseSensitivity * this.sensitivity;
+      this.yaw -= e.movementX * k;
+      this.pitch -= e.movementY * k;
       this.pitch = THREE.MathUtils.clamp(this.pitch, -1.45, 1.45);
     });
     document.addEventListener('keydown', (e) => { this.keys.add(e.code); });

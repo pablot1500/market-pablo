@@ -1,8 +1,10 @@
 // Punto de entrada: arma la escena, conecta los sistemas y corre el loop principal.
 import * as THREE from 'three';
 import { CLOSE_HOUR, GAME_MINUTES_PER_SECOND, OPEN_HOUR, PLAYER, PRODUCTS, PRODUCT_BY_ID, WORLD_BOUNDS, fmt } from './config.js';
-import { buildWorld, SHELF_LAYOUT } from './world.js';
+import { buildWorld, FURNITURE_LAYOUT } from './world.js';
 import { ShelfUnit } from './shelves.js';
+import { Counter, ComputerDesk, TrashBin } from './furniture.js';
+import { FurnitureMover } from './mover.js';
 import { Box, BOX_SIZE } from './boxes.js';
 import { NavGrid } from './pathfinding.js';
 import { Player } from './player.js';
@@ -13,7 +15,7 @@ import { Cleaning } from './cleaning.js';
 import { Traffic } from './traffic.js';
 import { UI } from './ui.js';
 import { sfx } from './audio.js';
-import { hasSave, readSave, writeSave } from './save.js';
+import { hasSave, readSave, writeSave, readSettings, writeSettings } from './save.js';
 
 class Game {
   constructor() {
@@ -34,25 +36,36 @@ class Game {
     this.interactables = [...this.world.interactables];
     this.colliders = [...this.world.colliders];
 
-    this.shelves = SHELF_LAYOUT.map(([x, z, r], i) => new ShelfUnit(this.scene, x, z, r, i));
-    for (const unit of this.shelves) {
-      this.colliders.push(unit.collider);
-      for (const slot of unit.slots) {
-        this.addInteractable(slot.hit);
-        this.addInteractable(slot.tagMesh);
-      }
+    // muebles (todos se pueden mover con F)
+    this.furniture = [];
+    this.shelves = [];
+    for (const [type, x, z, r] of FURNITURE_LAYOUT) {
+      let f;
+      if (type === 'shelf') { f = new ShelfUnit(this.scene, this.shelves.length); this.shelves.push(f); }
+      else if (type === 'counter') f = this.counter = new Counter(this.scene);
+      else if (type === 'desk') f = this.desk = new ComputerDesk(this.scene);
+      else f = this.trash = new TrashBin(this.scene);
+      f.place(x, z, r);
+      this.furniture.push(f);
+      this.colliders.push(f.collider);
+      for (const m of f.interactMeshes) this.addInteractable(m);
+      if (type === 'shelf') for (const slot of f.slots) { this.addInteractable(slot.hit); this.addInteractable(slot.tagMesh); }
     }
     this.nav = new NavGrid({ minX: WORLD_BOUNDS.minX - 0.5, maxX: WORLD_BOUNDS.maxX + 0.5, minZ: WORLD_BOUNDS.minZ, maxZ: WORLD_BOUNDS.maxZ + 0.5 });
     this.nav.rebuild(this.colliders);
+    this.updateQueueSpots();
 
     this.player = new Player(this.camera, this.canvas);
     this.player.setPosition(this.world.playerStart, Math.PI);
+    this.settings = { sensitivity: 1, ...readSettings() };
+    this.player.sensitivity = this.settings.sensitivity;
     this.economy = new Economy();
     this.ui = new UI(this);
     this.checkout = new Checkout(this);
     this.cleaning = new Cleaning(this);
     this.customers = new CustomerManager(this);
     this.traffic = new Traffic(this.scene);
+    this.mover = new FurnitureMover(this);
 
     this.boxes = [];
     this.queue = [];
@@ -99,6 +112,53 @@ class Game {
       if (d < bestD) { bestD = d; best = s; }
     }
     return best;
+  }
+
+  // Fila de la caja: sale del frente del mostrador y sigue el camino hacia la entrada.
+  updateQueueSpots() {
+    const start = this.counter.customerSpot();
+    const target = this.world.storeEntry.clone().add(new THREE.Vector3(0, 0, -2.2));
+    const spots = [start.clone()];
+    const walk = (from, to) => {
+      const pts = [from, ...this.nav.findPath(from, to)];
+      let carry = 0;
+      for (let i = 1; i < pts.length && spots.length < 10; i++) {
+        const a = pts[i - 1], b = pts[i];
+        const len = a.distanceTo(b);
+        let d = 0.85 - carry;
+        while (d <= len && spots.length < 10) {
+          spots.push(a.clone().lerp(b, d / len));
+          d += 0.85;
+        }
+        carry = len - (d - 0.85);
+      }
+    };
+    walk(start, target);
+    if (spots.length < 10) walk(spots[spots.length - 1], new THREE.Vector3(0, 0, 0));
+    this.queueSpots = spots;
+  }
+
+  // Verifica que, con los muebles como están, se pueda llegar a todo. Devuelve el problema o null.
+  checkLayout() {
+    const entry = this.world.storeEntry;
+    const nav = this.nav;
+    if (!nav.reachable(entry, this.counter.customerSpot())) return 'Así los clientes no pueden llegar a la caja';
+    const behind = this.counter.group.localToWorld(new THREE.Vector3(0, 0, -this.counter.d / 2 - 0.6)).setY(0);
+    if (!nav.reachable(entry, behind)) return 'Así no podés pararte detrás de la caja';
+    if (!nav.reachable(entry, this.desk.frontPoint(0.6))) return 'Así no podés llegar a la computadora';
+    for (const s of this.shelves) if (!nav.reachable(entry, s.frontPoint(0.6))) return 'Así un estante queda sin acceso';
+    return null;
+  }
+
+  onLayoutChanged() {
+    this.nav.rebuild(this.colliders);
+    this.updateQueueSpots();
+    for (const c of this.customers.list) {
+      if (c.state === 'toShelf') c.goTo(c.target.slot.accessPoint());
+      else if (c.state === 'queue') c.queueIndex = -1;
+      else if (c.state === 'entering') c.goTo(this.world.storeEntry);
+      else if (c.state === 'leaving') c.goTo(c.exitPoint);
+    }
   }
 
   stockOf(product) {
@@ -250,7 +310,15 @@ class Game {
 
   // ---------- interacción ----------
   hintFor(t) {
+    if (this.mover.active) return this.mover.hint();
     if (!t) return '';
+    const base = this.baseHint(t);
+    const f = t.furniture || (t.slot && t.slot.unit);
+    if (f && !this.player.held) return base ? `${base}\nF: mover ${f.name}` : `F: mover ${f.name}`;
+    return base;
+  }
+
+  baseHint(t) {
     const held = this.player.held;
     const e = this.economy;
     switch (t.kind) {
@@ -278,11 +346,13 @@ class Game {
         if (this.checkout.phase === 'scanning') return 'Escaneá los productos del mostrador';
         return 'Caja registradora';
       case 'dirt': return held ? 'Soltá la caja (Q) para limpiar' : 'Mantené click: limpiar';
+      case 'furniture': return '';
       default: return '';
     }
   }
 
   primaryAction() {
+    if (this.mover.active) { this.mover.confirm(); return; }
     const t = this.target;
     if (!t) return;
     switch (t.kind) {
@@ -297,6 +367,7 @@ class Game {
   }
 
   secondaryAction() {
+    if (this.mover.active) return;
     const t = this.target;
     if (t && t.kind === 'slot' && this.player.held) this.takeItem(t.slot);
   }
@@ -345,10 +416,24 @@ class Game {
     });
     document.addEventListener('mouseup', (e) => { if (e.button === 0) this.mouseDown = false; });
     document.addEventListener('contextmenu', (e) => e.preventDefault());
+    document.addEventListener('wheel', (e) => {
+      if (this.locked && this.mover.active) this.mover.rotate(e.deltaY > 0 ? 1 : -1);
+    });
     document.addEventListener('keydown', (e) => {
       if (!this.locked || this.ui.panelOpen) return;
+      if (this.mover.active) {
+        if (e.code === 'KeyF') this.mover.confirm();
+        if (e.code === 'KeyR') this.mover.rotate(1);
+        if (e.code === 'KeyQ') this.mover.cancel();
+        return;
+      }
       if (e.code === 'KeyE') this.useAction();
       if (e.code === 'KeyQ') this.dropHeld();
+      if (e.code === 'KeyF') {
+        const t = this.target;
+        const f = t && (t.furniture || (t.slot && t.slot.unit));
+        if (f) this.mover.start(f);
+      }
     });
   }
 
@@ -383,7 +468,7 @@ class Game {
       this.started = true;
       this.lockPointer();
       if (this.day === 1 && this.boxes.length === 0) {
-        setTimeout(() => this.ui.toast('Empezá usando la computadora del mostrador para comprar mercadería 🖥️', 'info', 6000), 600);
+        setTimeout(() => this.ui.toast('Empezá usando la computadora del escritorio para comprar mercadería 🖥️', 'info', 6000), 600);
       }
     };
     document.getElementById('btn-new').addEventListener('click', begin);
@@ -394,6 +479,23 @@ class Game {
       document.getElementById('save-info').textContent = ok ? 'Partida guardada ✔' : 'No se pudo guardar en este navegador.';
     });
     document.getElementById('btn-menu').addEventListener('click', () => location.reload());
+    const sliders = [...document.querySelectorAll('.sens-slider')];
+    const showSens = () => {
+      for (const sl of sliders) {
+        sl.value = this.settings.sensitivity;
+        sl.parentElement.querySelector('.sens-val').textContent = `${this.settings.sensitivity.toFixed(2)}x`;
+      }
+    };
+    for (const sl of sliders) {
+      sl.addEventListener('input', () => {
+        this.settings.sensitivity = Number(sl.value);
+        this.player.sensitivity = this.settings.sensitivity;
+        showSens();
+        writeSettings(this.settings);
+      });
+      sl.addEventListener('click', (e) => e.stopPropagation());
+    }
+    showSens();
   }
 
   // ---------- día ----------
@@ -448,6 +550,7 @@ class Game {
       slots,
       boxes,
       dirt: this.cleaning.toJSON(),
+      furniture: this.furniture.map((f) => ({ type: f.type, x: f.position.x, z: f.position.z, r: f.rot })),
       player: { x: this.player.position.x, z: this.player.position.z, yaw: this.player.yaw },
     };
   }
@@ -458,6 +561,10 @@ class Game {
     this.time = data.time;
     this.closedForDay = data.closedForDay;
     this.economy.load(data.economy);
+    if (Array.isArray(data.furniture) && data.furniture.length === this.furniture.length) {
+      data.furniture.forEach((d, i) => { if (d.type === this.furniture[i].type) this.furniture[i].place(d.x, d.z, d.r); });
+      this.onLayoutChanged();
+    }
     for (const s of data.slots) {
       const slot = this.shelves[s.u] && this.shelves[s.u].slots[s.i];
       const product = PRODUCT_BY_ID[s.p];
@@ -489,10 +596,11 @@ class Game {
     this.updateTime(dt);
     this.customers.update(dt);
     this.traffic.update(dt, this.player.position);
-    this.world.setTimeOfDay(this.time);
+    this.traffic.setNight(this.world.setTimeOfDay(this.time));
     this.world.updateDoors(dt, [this.player.position, ...this.customers.list]);
 
-    if (!this.ui.panelOpen) this.updateTarget();
+    if (this.mover.active) { this.mover.update(); this.target = null; }
+    else if (!this.ui.panelOpen) this.updateTarget();
     else this.target = null;
     const progress = this.cleaning.update(dt, this.target, this.mouseDown);
     this.ui.setProgress(progress);

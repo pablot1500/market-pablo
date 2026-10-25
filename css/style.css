@@ -64,6 +64,9 @@ button { font: inherit; cursor: pointer; }
 .controls li { margin-bottom: 6px; }
 kbd { background: #eee8da; border: 1px solid #d5ccb8; border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; font-size: 12px; font-family: inherit; }
 .small { font-size: 13px; color: var(--muted); }
+.setting { display: flex; align-items: center; gap: 12px; margin: 4px 0 16px; font-size: 14px; font-weight: 600; flex-wrap: wrap; }
+.setting input[type=range] { flex: 1; min-width: 160px; max-width: 320px; accent-color: var(--green); }
+.sens-val { font-variant-numeric: tabular-nums; min-width: 48px; color: var(--muted); }
 @media (max-width: 700px) { .howto { grid-template-columns: 1fr; } .card h1 { font-size: 34px; } }
 
 /* ---------- Paneles (computadora, cobro, resumen) ---------- */

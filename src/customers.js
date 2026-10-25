@@ -3,76 +3,165 @@ import * as THREE from 'three';
 import { CUSTOMER, GAME_MINUTES_PER_SECOND, PRODUCTS, STORE } from './config.js';
 import { bubbleTexture } from './textures.js';
 
-const SKIN = ['#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#ffdbac'];
-const SHIRTS = ['#e53935', '#1e88e5', '#43a047', '#fdd835', '#8e24aa', '#fb8c00', '#00897b', '#546e7a', '#d81b60', '#3949ab'];
-const PANTS = ['#263238', '#37474f', '#1a237e', '#4e342e', '#212121', '#5d4037'];
-const HAIR = ['#212121', '#4e342e', '#795548', '#d7a86e', '#9e9e9e', '#3e2723'];
+const SKIN = ['#f3cfa9', '#e8b88a', '#d39a6a', '#b07548', '#8a5636', '#5e3a24', '#f6d7bd'];
+const SHIRTS = ['#e53935', '#1e88e5', '#43a047', '#fdd835', '#8e24aa', '#fb8c00', '#00897b', '#546e7a', '#d81b60', '#3949ab', '#f5f5f5', '#795548', '#9ccc65'];
+const PANTS = ['#263238', '#37474f', '#1a3a6b', '#4e342e', '#212121', '#5d4037', '#3f51b5', '#8d6e63', '#616161'];
+const HAIR = ['#1b1b1b', '#3b2618', '#6b4226', '#a0703f', '#d9b26f', '#8c8c8c', '#e0e0e0', '#7a2e1a'];
+const SHOES = ['#1b1b1b', '#3e2723', '#f5f5f5', '#5d4037', '#283593'];
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+// Geometrías compartidas por todos los clientes
+const GEO = {
+  thigh: new THREE.CapsuleGeometry(0.072, 0.3, 4, 10),
+  shin: new THREE.CapsuleGeometry(0.058, 0.32, 4, 10),
+  shoe: new THREE.CapsuleGeometry(0.052, 0.14, 4, 8).rotateX(Math.PI / 2),
+  pelvis: new THREE.CylinderGeometry(0.15, 0.14, 0.2, 14),
+  torso: new THREE.LatheGeometry([
+    [0, 0], [0.135, 0], [0.142, 0.06], [0.155, 0.18], [0.17, 0.32], [0.175, 0.38], [0.165, 0.43], [0.12, 0.47], [0.055, 0.49], [0.0, 0.495],
+  ].map(([x, y]) => new THREE.Vector2(x, y)), 18),
+  torsoF: new THREE.LatheGeometry([
+    [0, 0], [0.125, 0], [0.12, 0.08], [0.138, 0.22], [0.162, 0.32], [0.162, 0.38], [0.15, 0.43], [0.11, 0.47], [0.05, 0.49], [0.0, 0.495],
+  ].map(([x, y]) => new THREE.Vector2(x, y)), 18),
+  shoulder: new THREE.SphereGeometry(0.054, 12, 10),
+  upperArm: new THREE.CapsuleGeometry(0.052, 0.2, 4, 10),
+  forearm: new THREE.CapsuleGeometry(0.04, 0.19, 4, 8),
+  hand: new THREE.SphereGeometry(0.045, 8, 6),
+  neck: new THREE.CylinderGeometry(0.046, 0.052, 0.12, 12),
+  head: new THREE.SphereGeometry(0.1, 20, 16),
+  nose: new THREE.ConeGeometry(0.017, 0.045, 8).rotateX(Math.PI / 2),
+  ear: new THREE.SphereGeometry(0.026, 8, 6),
+  eyeWhite: new THREE.SphereGeometry(0.016, 10, 8),
+  iris: new THREE.SphereGeometry(0.0095, 8, 6),
+  brow: new THREE.BoxGeometry(0.036, 0.008, 0.01),
+  mouth: new THREE.BoxGeometry(0.036, 0.007, 0.006),
+  hairCap: new THREE.SphereGeometry(0.108, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.52),
+  hairBack: new THREE.CapsuleGeometry(0.09, 0.16, 4, 10),
+  bun: new THREE.SphereGeometry(0.05, 10, 8),
+  capBrim: new THREE.CylinderGeometry(0.1, 0.1, 0.012, 16, 1, false, -Math.PI / 2, Math.PI),
+  skirt: new THREE.CylinderGeometry(0.155, 0.25, 0.4, 16, 1, true),
+  belt: new THREE.CylinderGeometry(0.143, 0.143, 0.035, 16),
+};
+
+const matCache = new Map();
+function m(color, rough = 0.75) {
+  const key = color + rough;
+  if (!matCache.has(key)) matCache.set(key, new THREE.MeshStandardMaterial({ color, roughness: rough, side: THREE.FrontSide }));
+  return matCache.get(key);
+}
 
 function buildModel() {
   const g = new THREE.Group();
-  const m = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8 });
-  const skin = m(pick(SKIN)), shirt = m(pick(SHIRTS)), pants = m(pick(PANTS)), hair = m(pick(HAIR));
-  const scale = 0.92 + Math.random() * 0.16;
+  const body = new THREE.Group(); // todo menos la canasta sube y baja al caminar
+  g.add(body);
+  const female = Math.random() < 0.5;
+  const skin = m(pick(SKIN), 0.6), hair = m(pick(HAIR), 0.85), shirt = m(pick(SHIRTS)), pants = m(pick(PANTS));
+  const shoes = m(pick(SHOES), 0.5);
+  const skirt = female && Math.random() < 0.4;
+  const longSleeves = Math.random() < 0.45;
+  const mesh = (geo, mat, parent, x = 0, y = 0, z = 0) => {
+    const o = new THREE.Mesh(geo, mat);
+    o.position.set(x, y, z);
+    parent.add(o);
+    return o;
+  };
 
+  // piernas: cadera -> rodilla -> pie
   const legs = [];
   for (const s of [-1, 1]) {
-    const pivot = new THREE.Group();
-    pivot.position.set(s * 0.1, 0.85, 0);
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.85, 0.16), pants);
-    leg.position.y = -0.425;
-    pivot.add(leg);
-    const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.08, 0.24), m('#1b1b1b'));
-    shoe.position.set(0, -0.82, 0.04);
-    pivot.add(shoe);
-    g.add(pivot);
-    legs.push(pivot);
+    const hip = new THREE.Group();
+    hip.position.set(s * 0.085, 0.92, 0);
+    body.add(hip);
+    mesh(GEO.thigh, skirt ? skin : pants, hip, 0, -0.22, 0);
+    const knee = new THREE.Group();
+    knee.position.y = -0.44;
+    hip.add(knee);
+    mesh(GEO.shin, skirt ? skin : pants, knee, 0, -0.2, 0);
+    mesh(GEO.shoe, shoes, knee, 0, -0.42, 0.045);
+    legs.push({ hip, knee });
   }
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.42, 4, 10), shirt);
-  torso.position.y = 1.18;
-  torso.scale.z = 0.7;
-  g.add(torso);
+  mesh(GEO.pelvis, skirt ? shirt : pants, body, 0, 0.97, 0).scale.set(1, 1, 0.72);
+  if (skirt) mesh(GEO.skirt, m(pick(PANTS)), body, 0, 0.82, 0).scale.set(1, 1, 0.8);
+  else mesh(GEO.belt, m('#2b1d14', 0.5), body, 0, 1.06, 0).scale.set(1, 1, 0.72);
+
+  // torso
+  const torso = new THREE.Group();
+  torso.position.y = 1.0;
+  body.add(torso);
+  const chest = mesh(female ? GEO.torsoF : GEO.torso, shirt, torso, 0, 0, 0);
+  chest.scale.set(female ? 0.95 : 1.05, 1, 0.66);
+
+  // brazos: hombro -> codo -> mano
   const arms = [];
   for (const s of [-1, 1]) {
-    const pivot = new THREE.Group();
-    pivot.position.set(s * 0.27, 1.42, 0);
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.55, 0.11), shirt);
-    arm.position.y = -0.26;
-    pivot.add(arm);
-    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), skin);
-    hand.position.y = -0.57;
-    pivot.add(hand);
-    g.add(pivot);
-    arms.push(pivot);
+    const shoulder = new THREE.Group();
+    shoulder.position.set(s * (female ? 0.165 : 0.185), 0.41, 0);
+    shoulder.rotation.z = s * 0.05;
+    torso.add(shoulder);
+    // la articulación del hombro se mueve con el brazo (sin "bolitas" sueltas)
+    mesh(GEO.shoulder, shirt, shoulder, 0, -0.01, 0);
+    mesh(GEO.upperArm, shirt, shoulder, 0, -0.15, 0);
+    const elbow = new THREE.Group();
+    elbow.position.y = -0.29;
+    shoulder.add(elbow);
+    mesh(GEO.forearm, longSleeves ? shirt : skin, elbow, 0, -0.13, 0);
+    mesh(GEO.hand, skin, elbow, 0, -0.29, 0.005).scale.set(0.9, 1.4, 0.65);
+    arms.push({ shoulder, elbow });
   }
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 10), skin);
-  head.position.y = 1.66;
-  g.add(head);
-  const hairMesh = new THREE.Mesh(new THREE.SphereGeometry(0.148, 14, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), hair);
-  hairMesh.position.y = 1.67;
-  hairMesh.rotation.x = -0.25;
-  g.add(hairMesh);
-  for (const s of [-1, 1]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 4), m('#111'));
-    eye.position.set(s * 0.05, 1.68, 0.125);
-    g.add(eye);
-  }
-  // canasta (aparece cuando lleva productos)
-  const basket = new THREE.Group();
-  const bm = m('#d32f2f');
-  const bw = 0.36, bh = 0.2, bd = 0.24;
-  const add = (w, h, d, x, y, z) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), bm); b.position.set(x, y, z); basket.add(b); };
-  add(bw, 0.02, bd, 0, 0, 0);
-  add(bw, bh, 0.02, 0, bh / 2, bd / 2);
-  add(bw, bh, 0.02, 0, bh / 2, -bd / 2);
-  add(0.02, bh, bd, bw / 2, bh / 2, 0);
-  add(0.02, bh, bd, -bw / 2, bh / 2, 0);
-  basket.position.set(0.32, 0.72, 0.12);
-  basket.visible = false;
-  g.add(basket);
 
-  g.scale.setScalar(scale);
-  return { group: g, legs, arms, basket };
+  // cabeza
+  const headG = new THREE.Group();
+  headG.position.y = 0.47;
+  torso.add(headG);
+  mesh(GEO.neck, skin, headG, 0, 0.0, 0);
+  mesh(GEO.head, skin, headG, 0, 0.16, 0.005).scale.set(0.95, 1.17, 1.05);
+  mesh(GEO.nose, skin, headG, 0, 0.145, 0.108);
+  for (const s of [-1, 1]) {
+    mesh(GEO.ear, skin, headG, s * 0.094, 0.155, -0.005).scale.set(0.35, 0.65, 0.5);
+    mesh(GEO.eyeWhite, m('#fafafa', 0.3), headG, s * 0.036, 0.172, 0.088);
+    mesh(GEO.iris, m(pick(['#3b2618', '#1b1b1b', '#2e6b8a', '#4a7a3a']), 0.3), headG, s * 0.036, 0.172, 0.102);
+    mesh(GEO.brow, hair, headG, s * 0.037, 0.2, 0.097).rotation.z = s * -0.08;
+  }
+  mesh(GEO.mouth, m('#9c4a4a', 0.6), headG, 0, 0.105, 0.1);
+
+  const style = female ? pick(['long', 'long', 'bun', 'short']) : pick(['short', 'short', 'cap', 'bald', 'short']);
+  if (style !== 'bald') {
+    const cap = mesh(GEO.hairCap, style === 'cap' ? m(pick(SHIRTS), 0.6) : hair, headG, 0, 0.19, -0.012);
+    cap.scale.set(1.0, 0.9, 1.08);
+    cap.rotation.x = -0.4;
+    if (style === 'cap') {
+      const brim = mesh(GEO.capBrim, cap.material, headG, 0, 0.225, 0.07);
+      brim.scale.set(1.0, 1, 1.3);
+      brim.rotation.x = 0.12;
+    }
+  } else {
+    const fringe = mesh(GEO.hairCap, hair, headG, 0, 0.13, -0.02);
+    fringe.scale.set(1.02, 0.6, 1.05);
+    fringe.rotation.x = -1.4;
+  }
+  if (style === 'long') mesh(GEO.hairBack, hair, headG, 0, 0.09, -0.055).scale.set(1.1, 1, 0.55);
+  if (style === 'bun') mesh(GEO.bun, hair, headG, 0, 0.27, -0.07);
+
+  // canasta (cuelga de la mano derecha)
+  const basket = new THREE.Group();
+  const bm = m('#d32f2f', 0.5);
+  const bw = 0.34, bh = 0.18, bd = 0.24;
+  const add = (w, h, d, x, y, z) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), bm); b.position.set(x, y, z); basket.add(b); };
+  add(bw, 0.02, bd, 0, -bh, 0);
+  add(bw, bh, 0.015, 0, -bh / 2, bd / 2);
+  add(bw, bh, 0.015, 0, -bh / 2, -bd / 2);
+  add(0.015, bh, bd, bw / 2, -bh / 2, 0);
+  add(0.015, bh, bd, -bw / 2, -bh / 2, 0);
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.01, 6, 12, Math.PI), m('#424242', 0.4));
+  handle.position.y = 0.0;
+  basket.add(handle);
+  basket.position.set(0, -0.33, 0);
+  basket.rotation.y = Math.PI / 2;
+  basket.visible = false;
+  arms[1].elbow.add(basket);
+
+  const height = (female ? 0.94 : 1.0) * (0.95 + Math.random() * 0.1);
+  g.scale.setScalar(height);
+  return { group: g, body, torso, legs, arms, head: headG, basket };
 }
 
 let nextId = 1;
@@ -83,8 +172,7 @@ export class Customer {
     this.game = game;
     const model = buildModel();
     this.mesh = model.group;
-    this.legs = model.legs;
-    this.arms = model.arms;
+    this.model = model;
     this.basketMesh = model.basket;
     this.pos = spawn.clone();
     this.mesh.position.copy(this.pos);
@@ -196,15 +284,37 @@ export class Customer {
     this.mesh.position.set(this.pos.x, 0, this.pos.z);
     let diff = this.heading - this.mesh.rotation.y;
     diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-    this.mesh.rotation.y += diff * Math.min(1, dt * 10);
-    if (moving) this.walkPhase += dt * 7;
-    const swing = moving ? Math.sin(this.walkPhase) * 0.5 : 0;
-    this.legs[0].rotation.x = THREE.MathUtils.lerp(this.legs[0].rotation.x, swing, 0.3);
-    this.legs[1].rotation.x = THREE.MathUtils.lerp(this.legs[1].rotation.x, -swing, 0.3);
-    this.arms[0].rotation.x = THREE.MathUtils.lerp(this.arms[0].rotation.x, -swing * 0.7, 0.3);
+    this.mesh.rotation.y += diff * Math.min(1, dt * 8);
+    const md = this.model;
+    const k = Math.min(1, dt * 12);
+    const lerp = (o, prop, v) => { o.rotation[prop] += (v - o.rotation[prop]) * k; };
+    if (moving) this.walkPhase += dt * CUSTOMER.speed * 4.4;
+    const p = this.walkPhase;
+    const amp = moving ? 1 : 0;
     const carrying = this.basketMesh.visible;
-    this.arms[1].rotation.x = THREE.MathUtils.lerp(this.arms[1].rotation.x, carrying ? -0.3 : swing * 0.7, 0.3);
-    if (this.state === 'picking') this.arms[0].rotation.x = THREE.MathUtils.lerp(this.arms[0].rotation.x, -1.3, 0.2);
+    for (let i = 0; i < 2; i++) {
+      const ph = p + i * Math.PI;
+      const leg = md.legs[i];
+      lerp(leg.hip, 'x', -Math.sin(ph) * 0.5 * amp);
+      lerp(leg.knee, 'x', (Math.max(0, Math.cos(ph)) * 0.95 + 0.05) * amp + (1 - amp) * 0.03);
+      const arm = md.arms[i];
+      const swing = Math.sin(ph) * 0.42 * amp;
+      if (i === 1 && carrying) {
+        lerp(arm.shoulder, 'x', swing * 0.25);
+        lerp(arm.elbow, 'x', -0.05);
+      } else if (i === 0 && this.state === 'picking') {
+        lerp(arm.shoulder, 'x', -1.25);
+        lerp(arm.elbow, 'x', -0.35);
+      } else {
+        lerp(arm.shoulder, 'x', swing);
+        lerp(arm.elbow, 'x', -0.22 - Math.max(0, -Math.sin(ph)) * 0.35 * amp);
+      }
+    }
+    md.body.position.y = moving ? Math.abs(Math.cos(p)) * 0.03 - 0.015 : Math.sin(performance.now() * 0.002 + this.id) * 0.004;
+    lerp(md.torso, 'y', Math.sin(p) * 0.08 * amp);
+    lerp(md.torso, 'x', moving ? 0.05 : 0);
+    // mira hacia la góndola cuando elige
+    lerp(md.head, 'x', this.state === 'picking' ? 0.15 : 0);
   }
 
   nextShelf() {
@@ -270,18 +380,19 @@ export class Customer {
     const idx = g.queue.indexOf(this);
     if (idx !== this.queueIndex) {
       this.queueIndex = idx;
-      const spots = g.world.queueSpots;
+      const spots = g.queueSpots;
       this.goTo(spots[Math.min(idx, spots.length - 1)]);
     }
     if (!this.path.length) {
       if (idx === 0 && !g.checkout.busy) {
         this.state = 'checkout';
-        this.heading = Math.PI; // mirando al mostrador
+        const cp = g.counter.position;
+        this.heading = Math.atan2(cp.x - this.pos.x, cp.z - this.pos.z); // mirando al mostrador
         g.checkout.begin(this);
         this.basketMesh.visible = false;
         return;
       }
-      const spots = g.world.queueSpots;
+      const spots = g.queueSpots;
       const s = spots[Math.min(idx, spots.length - 1)];
       const ahead = idx > 0 ? spots[Math.min(idx - 1, spots.length - 1)] : null;
       if (ahead) this.heading = Math.atan2(ahead.x - s.x, ahead.z - s.z);
@@ -319,7 +430,9 @@ export class Customer {
 
   dispose() {
     this.game.scene.remove(this.mesh);
-    this.mesh.traverse((o) => { if (o.isMesh) o.geometry.dispose(); });
+    // las geometrías del cuerpo son compartidas; solo se liberan las de la canasta
+    this.basketMesh.traverse((o) => { if (o.isMesh) o.geometry.dispose(); });
+    if (this.bubble) this.bubble.material.map.dispose();
   }
 }
 

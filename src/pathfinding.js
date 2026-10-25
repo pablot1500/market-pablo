@@ -67,6 +67,16 @@ export class NavGrid {
     return true;
   }
 
+  // ¿Se puede llegar caminando de un punto al otro? (el destino tiene que estar en una celda libre o al lado)
+  reachable(from, to) {
+    const [tc, tr] = this.toCell(to.x, to.z);
+    let ok = false;
+    for (let dr = -1; dr <= 1 && !ok; dr++) for (let dc = -1; dc <= 1 && !ok; dc++) ok = this.isFree(tc + dc, tr + dr);
+    if (!ok) return false;
+    this.findPath(from, to);
+    return this.lastFound;
+  }
+
   findPath(from, to) {
     let [sc, sr] = this.nearestFree(...this.toCell(from.x, from.z));
     let [ec, er] = this.nearestFree(...this.toCell(to.x, to.z));
@@ -104,6 +114,7 @@ export class NavGrid {
         }
       }
     }
+    this.lastFound = found;
     if (!found) return [to.clone()];
     const cells = [];
     for (let i = goal; i !== -1; i = came[i]) cells.push(i);
